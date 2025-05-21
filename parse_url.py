@@ -111,8 +111,8 @@ def create_event(service, calendarId, summary, location, start_dt, end_dt, descr
 
 # Example usage with your scraped fields
 if __name__ == '__main__':
+    print('KPR O35 fixtures')
     fix_out = get_fixtures("https://registration.squadi.com/competitions?yearId=7&matchid=622227&organisationKey=bede218b-68e3-45cb-9ec0-892683988b5b&competitionUniqueKey=6a795117-75e8-448c-8f21-977c2412946a&divisionId=5876&teamId=59512")
-    [print(a) for a in fix_out]
     cal_id = 'f5e3d140f8e37220cefc618d30a57c8a1c9654f716175945c3eda5d0c71cb0c8@group.calendar.google.com'
     if len(fix_out) > 0:
         service = get_calendar_service()
@@ -127,4 +127,5 @@ if __name__ == '__main__':
     else:
         print('No fixtures found so no changes made to calendar')
 
+    # Holmes family fixtures
 

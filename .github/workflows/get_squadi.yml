@@ -6,8 +6,8 @@ name: Python application
 on:
   push:
     branches: [ "main" ]
-  #schedule:
-  #  - cron: "30 11 * * *"    #runs at 11:30 UTC everyday
+  schedule:
+    - cron: "30 15 * * *"    #runs at 15:30 UTC everyday
 
 jobs:
   update_fixtures:

@@ -25,5 +25,7 @@ jobs:
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Run script
+      env:
+        GOOGLE_SA: ${{ secrets.GOOGLE_SA }}
       run: |
         python parse_url.py

@@ -30,7 +30,7 @@ def get_fixtures(url):
         # fixtures = page.locator("div.styles_CompRound_VH6GP").all_inner_texts()
         fixtures = table.locator("div.styles_compRound__VH6GP")
         fix_out = []
-        print('Fixtures found, parsing row by row')
+        print(f'Fixtures found, parsing {fixtures.count()} fixtures row by row')
         for i in range(fixtures.count()):
             fix = {}
             fix['Round'] = fixtures.nth(i).locator("div.styles_header__CMgUx").inner_text()

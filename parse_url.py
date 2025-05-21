@@ -19,7 +19,11 @@ def get_fixtures(url):
     with sync_playwright() as p:
         print('Opening squadi page')
         browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
+        context = browser.new_context(
+            locale="en-AU",  # Set the locale to English (Australia)
+            timezone_id="Australia/Brisbane"  # Set the timezone to Brisbane
+        )
+        page = context.new_page()
         page.goto(url, timeout=10000)
         print("Waiting for network to be idle...")
         page.wait_for_load_state('networkidle', timeout=60000)  # Wait up to 60 seconds for network to settle

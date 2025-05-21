@@ -17,10 +17,11 @@ def get_fixtures(url):
     :return: list of dicts
     """
     with sync_playwright() as p:
+        print('Opening squadi page')
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
         page.goto(url, timeout=10000)
-
+        print('Page opened, now waiting for fixtures container')
         page.wait_for_selector("div.styles_tableContainer__pii69")  # Adjust to actual fixture container
 
         # grab fixtures table
@@ -29,6 +30,7 @@ def get_fixtures(url):
         # fixtures = page.locator("div.styles_CompRound_VH6GP").all_inner_texts()
         fixtures = table.locator("div.styles_compRound__VH6GP")
         fix_out = []
+        print('Fixtures found, parsing row by row')
         for i in range(fixtures.count()):
             fix = {}
             fix['Round'] = fixtures.nth(i).locator("div.styles_header__CMgUx").inner_text()
@@ -41,6 +43,8 @@ def get_fixtures(url):
             fix_out.append(fix)
 
         browser.close()
+        print('Fixtures successfully parsed')
+
     return fix_out
 
 SCOPES = ['https://www.googleapis.com/auth/calendar.events']

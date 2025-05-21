@@ -21,6 +21,9 @@ def get_fixtures(url):
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
         page.goto(url, timeout=10000)
+        print("Waiting for network to be idle...")
+        page.wait_for_load_state('networkidle', timeout=60000)  # Wait up to 60 seconds for network to settle
+        print("Network idle.")
         print('Page opened, now waiting for fixtures container')
         page.wait_for_selector("div.styles_tableContainer__pii69")  # Adjust to actual fixture container
 

@@ -113,5 +113,7 @@ if __name__ == '__main__':
                          location=a['Location'],
                          start_dt=a['StartDateTime'],
                          end_dt=a['StartDateTime'] + dt.timedelta(hours=2))
+    else:
+        print('No fixtures found so no changes made to calendar')
 
 

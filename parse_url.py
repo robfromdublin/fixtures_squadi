@@ -135,7 +135,7 @@ def get_calendar_service():
     return build('calendar', 'v3', credentials=creds)
 
 def delete_events_from_calendar(service, calendarId):
-    events_result = service.events().list(calendarId=calendarId).execute()
+    events_result = service.events().list(calendarId=calendarId, maxResults=1000).execute()
     for event in events_result.get('items', []):
         service.events().delete(calendarId=calendarId, eventId=event['id']).execute()
     print('All events deleted')

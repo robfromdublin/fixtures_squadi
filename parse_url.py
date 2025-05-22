@@ -8,6 +8,55 @@ from google.auth.transport.requests import Request
 import os
 import json
 
+def get_the_gap_fixtures(url, team=None, year=2025):
+    """
+    Extract fixtures that are only found on The Gap FC website (e.g. U6 competition)
+
+    :param url:
+    :param team: If set then table will be filtered to the team name
+    :param year: Year isn't included on the page
+    :return: list of dicts
+    """
+
+    with (sync_playwright() as p):
+        print('Opening The Gap FC fixtures page')
+        browser = p.chromium.launch(headless=False)
+        context = browser.new_context(
+            locale="en-AU",  # Set the locale to English (Australia)
+            timezone_id="Australia/Brisbane"  # Set the timezone to Brisbane
+        )
+        page = context.new_page()
+        page.goto(url, timeout=10000)
+        print("Waiting for network to be idle...")
+        page.wait_for_load_state('networkidle', timeout=60000)  # Wait up to 60 seconds for network to settle
+        print("Network idle.")
+        print('Page opened, now waiting for fixtures container')
+        page.wait_for_selector("table.draw")  # Adjust to actual fixture container
+
+        # if team is provided, filter the table to it
+        if team:
+            page.locator('select#filter').select_option(team)
+            page.wait_for_load_state('networkidle', timeout=60000)
+
+        fixtures = page.locator("table.draw tbody tr")
+        fix_out = []
+        for i in range(fixtures.count()):
+            fix = {}
+            row = fixtures.nth(i)
+            cols = row.locator('td')
+            fix['Round'] = row.locator('th.round').inner_text()
+            date = cols.nth(0).inner_text()
+            time = cols.nth(4).inner_text()
+            fix['StartDateTime'] = dt.datetime.strptime(f'{date} {year} {time}', '%d %b %Y %I:%M%p')
+            fix['Home'] = cols.nth(2).inner_text()
+            fix['Away'] = cols.nth(3).inner_text()
+            fix['Location'] = cols.nth(5).inner_text()
+            fix['Result'] = 'vs'  # result isn't captured on these pages
+            fix_out.append(fix)
+
+        browser.close()
+        print('Page closed')
+    return fix_out
 
 def get_fixtures(url):
     """
@@ -111,6 +160,7 @@ def create_event(service, calendarId, summary, location, start_dt, end_dt, descr
 
 # Example usage with your scraped fields
 if __name__ == '__main__':
+
     print('KPR O35 fixtures')
     fix_out = get_fixtures("https://registration.squadi.com/competitions?yearId=7&matchid=622227&organisationKey=bede218b-68e3-45cb-9ec0-892683988b5b&competitionUniqueKey=6a795117-75e8-448c-8f21-977c2412946a&divisionId=5876&teamId=59512")
     cal_id = 'f5e3d140f8e37220cefc618d30a57c8a1c9654f716175945c3eda5d0c71cb0c8@group.calendar.google.com'
@@ -131,14 +181,18 @@ if __name__ == '__main__':
     print('Holmes family fixtures')
     urls = {'Rob': "https://registration.squadi.com/competitions?yearId=7&matchid=622227&organisationKey=bede218b-68e3-45cb-9ec0-892683988b5b&competitionUniqueKey=6a795117-75e8-448c-8f21-977c2412946a&divisionId=5876&teamId=59512",
             'Saoirse': "https://registration.squadi.com/competitions?yearId=7&fbclid=IwAR376c74X44fcXFJfoZC2hM5kCg5sdUgERQktM5jNOOPr3VKSGvH_4E6cc8&organisationKey=eb9849ba-05f7-4dae-8c3c-52a23f774dad&matchid=622227&competitionUniqueKey=b63aa285-57d7-4ac7-b10c-7c443fc0d80c&divisionId=6690&teamId=68173",
-            'Cillian': "https://registration.squadi.com/competitions?yearId=7&fbclid=IwAR376c74X44fcXFJfoZC2hM5kCg5sdUgERQktM5jNOOPr3VKSGvH_4E6cc8&organisationKey=eb9849ba-05f7-4dae-8c3c-52a23f774dad&matchid=622227&competitionUniqueKey=b63aa285-57d7-4ac7-b10c-7c443fc0d80c&divisionId=5666&teamId=67848"
+            'Cillian': "https://registration.squadi.com/competitions?yearId=7&fbclid=IwAR376c74X44fcXFJfoZC2hM5kCg5sdUgERQktM5jNOOPr3VKSGvH_4E6cc8&organisationKey=eb9849ba-05f7-4dae-8c3c-52a23f774dad&matchid=622227&competitionUniqueKey=b63aa285-57d7-4ac7-b10c-7c443fc0d80c&divisionId=5666&teamId=67848",
+            'Twins': "https://www.gapfootball.org.au/football/miniroos/fixtures/under-6-draw/"
             }
     cal_id = '986b042e3651ea9db48e021d35660582e4013f3a5b6d0000c8409c56ff5a8908@group.calendar.google.com'
     service = get_calendar_service()
     #delete_events_from_calendar(service, cal_id)
     for u in urls.keys():
         print(f"{u}: Extracting fixtures")
-        fix_out = get_fixtures(urls[u])
+        if u == "Twins":
+            fix_out = get_the_gap_fixtures(url=urls[u], team='SC Freiburg')
+        else:
+            fix_out = get_fixtures(urls[u])
         if len(fix_out) > 0:
             for a in fix_out:
                 create_event(service,

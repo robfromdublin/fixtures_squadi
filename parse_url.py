@@ -193,6 +193,10 @@ if __name__ == '__main__':
             fix_out = get_the_gap_fixtures(url=urls[u], team='SC Freiburg')
         else:
             fix_out = get_fixtures(urls[u])
+        if u == "Rob":
+            duration = 2  #hours
+        else:
+            duration = 1
         if len(fix_out) > 0:
             for a in fix_out:
                 create_event(service,
@@ -200,7 +204,7 @@ if __name__ == '__main__':
                              summary=f"{u}: {a['Home']} {a['Result']} {a['Away']}",
                              location=a['Location'],
                              start_dt=a['StartDateTime'],
-                             end_dt=a['StartDateTime'] + dt.timedelta(hours=2))
+                             end_dt=a['StartDateTime'] + dt.timedelta(hours=duration))
             print(f'{u}: Events successfully created')
         else:
             print(f'{u}: No fixtures found so no changes made to calendar')

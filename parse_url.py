@@ -137,7 +137,10 @@ def get_calendar_service():
 def delete_events_from_calendar(service, calendarId):
     page_token = None
     while True:
-        events_result = service.events().list(calendarId=calendarId, maxResults=1000, pageToken=page_token).execute()
+        events_result = service.events().list(calendarId=calendarId,
+                                              maxResults=1000,
+                                              singleEvents=True,
+                                              pageToken=page_token).execute()
         i = 0
         for event in events_result.get('items', []):
             service.events().delete(calendarId=calendarId, eventId=event['id']).execute()
@@ -168,21 +171,21 @@ def create_event(service, calendarId, summary, location, start_dt, end_dt, descr
 # Example usage with your scraped fields
 if __name__ == '__main__':
 
-    # print('KPR O35 fixtures')
-    # fix_out = get_fixtures("https://registration.squadi.com/competitions?yearId=7&matchid=622227&organisationKey=bede218b-68e3-45cb-9ec0-892683988b5b&competitionUniqueKey=6a795117-75e8-448c-8f21-977c2412946a&divisionId=5876&teamId=59512")
-    # cal_id = 'f5e3d140f8e37220cefc618d30a57c8a1c9654f716175945c3eda5d0c71cb0c8@group.calendar.google.com'
-    # if len(fix_out) > 0:
-    #     service = get_calendar_service()
-    #     delete_events_from_calendar(service, cal_id)
-    #     for a in fix_out:
-    #         create_event(service,
-    #                      calendarId=cal_id,
-    #                      summary=f"{a['Home']} {a['Result']} {a['Away']}",
-    #                      location=a['Location'],
-    #                      start_dt=a['StartDateTime'],
-    #                      end_dt=a['StartDateTime'] + dt.timedelta(hours=2))
-    # else:
-    #     print('No fixtures found so no changes made to calendar')
+    print('KPR O35 fixtures')
+    fix_out = get_fixtures("https://registration.squadi.com/competitions?yearId=7&matchid=622227&organisationKey=bede218b-68e3-45cb-9ec0-892683988b5b&competitionUniqueKey=6a795117-75e8-448c-8f21-977c2412946a&divisionId=5876&teamId=59512")
+    cal_id = 'f5e3d140f8e37220cefc618d30a57c8a1c9654f716175945c3eda5d0c71cb0c8@group.calendar.google.com'
+    if len(fix_out) > 0:
+        service = get_calendar_service()
+        delete_events_from_calendar(service, cal_id)
+        for a in fix_out:
+            create_event(service,
+                         calendarId=cal_id,
+                         summary=f"{a['Home']} {a['Result']} {a['Away']}",
+                         location=a['Location'],
+                         start_dt=a['StartDateTime'],
+                         end_dt=a['StartDateTime'] + dt.timedelta(hours=2))
+    else:
+        print('No fixtures found so no changes made to calendar')
 
     # Holmes family fixtures
     print('Holmes family fixtures')

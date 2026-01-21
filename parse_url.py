@@ -191,9 +191,11 @@ if __name__ == '__main__':
     print('Holmes family fixtures')
     urls = {'Twins': "https://www.gapfootball.org.au/football/miniroos/fixtures/under-6-draw/",
             'Rob': "https://registration.squadi.com/competitions?yearId=7&matchid=622227&organisationKey=bede218b-68e3-45cb-9ec0-892683988b5b&competitionUniqueKey=6a795117-75e8-448c-8f21-977c2412946a&divisionId=5876&teamId=59512",
-            'Saoirse': "https://registration.squadi.com/competitions?yearId=7&fbclid=IwAR376c74X44fcXFJfoZC2hM5kCg5sdUgERQktM5jNOOPr3VKSGvH_4E6cc8&organisationKey=eb9849ba-05f7-4dae-8c3c-52a23f774dad&matchid=622227&competitionUniqueKey=b63aa285-57d7-4ac7-b10c-7c443fc0d80c&divisionId=6690&teamId=68173",
+            'Saoirse': "https://registration.squadi.com/livescoreSeasonFixture?organisationKey=74f39f3a-6e73-48a8-b837-705aba4c4512&yearId=8&competitionUniqueKey=3b8e1b7a-2625-402e-bd40-8da1d816291c&divisionId=All&teamId=92561",
             'Cillian': "https://registration.squadi.com/competitions?yearId=7&fbclid=IwAR376c74X44fcXFJfoZC2hM5kCg5sdUgERQktM5jNOOPr3VKSGvH_4E6cc8&organisationKey=eb9849ba-05f7-4dae-8c3c-52a23f774dad&matchid=622227&competitionUniqueKey=b63aa285-57d7-4ac7-b10c-7c443fc0d80c&divisionId=5666&teamId=67848"
             }
+    urls = {
+            'Saoirse': "https://registration.squadi.com/livescoreSeasonFixture?organisationKey=74f39f3a-6e73-48a8-b837-705aba4c4512&yearId=8&competitionUniqueKey=3b8e1b7a-2625-402e-bd40-8da1d816291c&divisionId=All&teamId=92561" }  
     cal_id = '986b042e3651ea9db48e021d35660582e4013f3a5b6d0000c8409c56ff5a8908@group.calendar.google.com'
     service = get_calendar_service()
     delete_events_from_calendar(service, cal_id)

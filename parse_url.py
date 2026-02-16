@@ -85,21 +85,19 @@ def get_fixtures(url):
 
         # fixtures = page.locator("div.styles_CompRound_VH6GP").all_inner_texts()
         fixtures = table.locator("div.styles_compRound__VH6GP")
-        print(page.locator("div.styles_CompRound_VH6GP").all_inner_texts())
         fix_out = []
         print(f'Fixtures found, parsing {fixtures.count()} fixtures row by row')
         for i in range(fixtures.count()):
-            print(i)
             fix = {}
             fix['Round'] = fixtures.nth(i).locator("div.styles_header__CMgUx").inner_text()
-            raw_dt = fixtures.nth(i).locator("div.styles_matchStartDatetime__i4RmM").inner_text().replace('\n',' ')
-            fix['StartDateTime'] = dt.datetime.strptime(raw_dt.replace(' (AEST)', ''), '%a, %b %d, %Y %I:%M %p')
             fix['Home'] = fixtures.nth(i).locator("div.styles_teamName__v4OQh").nth(0).inner_text()
             fix['Away'] = fixtures.nth(i).locator("div.styles_teamName__v4OQh").nth(1).inner_text()
-            fix['Location'] = fixtures.nth(i).locator("div.ant-col").nth(7).inner_text()
-            fix['Result'] = fixtures.nth(i).locator("div.styles_scoreBox__3xSTT").inner_text().replace('-','vs')
-            fix_out.append(fix)
-            print(fix_out)
+            if fix['Home'] != 'Bye' && fix['Away'] != 'Bye':
+                raw_dt = fixtures.nth(i).locator("div.styles_matchStartDatetime__i4RmM").inner_text().replace('\n',' ')
+                fix['StartDateTime'] = dt.datetime.strptime(raw_dt.replace(' (AEST)', ''), '%a, %b %d, %Y %I:%M %p')
+                fix['Location'] = fixtures.nth(i).locator("div.ant-col").nth(7).inner_text()
+                fix['Result'] = fixtures.nth(i).locator("div.styles_scoreBox__3xSTT").inner_text().replace('-','vs')
+                fix_out.append(fix)
 
         browser.close()
         print('Fixtures successfully parsed')

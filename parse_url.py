@@ -85,6 +85,7 @@ def get_fixtures(url):
 
         # fixtures = page.locator("div.styles_CompRound_VH6GP").all_inner_texts()
         fixtures = table.locator("div.styles_compRound__VH6GP")
+        print(fixtures)
         fix_out = []
         print(f'Fixtures found, parsing {fixtures.count()} fixtures row by row')
         for i in range(fixtures.count()):

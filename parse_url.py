@@ -92,7 +92,7 @@ def get_fixtures(url):
             fix['Round'] = fixtures.nth(i).locator("div.styles_header__CMgUx").inner_text()
             fix['Home'] = fixtures.nth(i).locator("div.styles_teamName__v4OQh").nth(0).inner_text()
             fix['Away'] = fixtures.nth(i).locator("div.styles_teamName__v4OQh").nth(1).inner_text()
-            if fix['Home'] != 'Bye' && fix['Away'] != 'Bye':
+            if fix['Home'] != 'Bye' and fix['Away'] != 'Bye':
                 raw_dt = fixtures.nth(i).locator("div.styles_matchStartDatetime__i4RmM").inner_text().replace('\n',' ')
                 fix['StartDateTime'] = dt.datetime.strptime(raw_dt.replace(' (AEST)', ''), '%a, %b %d, %Y %I:%M %p')
                 fix['Location'] = fixtures.nth(i).locator("div.ant-col").nth(7).inner_text()

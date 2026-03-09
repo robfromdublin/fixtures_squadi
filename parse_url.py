@@ -172,26 +172,34 @@ def create_event(service, calendarId, summary, location, start_dt, end_dt, descr
 # Example usage with your scraped fields
 if __name__ == '__main__':
 
-    print('KPR O35 fixtures')
-    fix_out = get_fixtures("https://registration.squadi.com/livescoreSeasonFixture?organisationKey=771945e6-27e1-43bf-b81e-30f80d1a4568&yearId=8&competitionUniqueKey=8e0e372e-1695-47e7-a34b-a50cf09f1a36&divisionId=All&teamId=103776")
+    print('KPR masters fixtures')
+    fix_O35 = get_fixtures("https://registration.squadi.com/livescoreSeasonFixture?organisationKey=771945e6-27e1-43bf-b81e-30f80d1a4568&yearId=8&competitionUniqueKey=8e0e372e-1695-47e7-a34b-a50cf09f1a36&divisionId=All&teamId=103776")
+    fix_O45 = get_fixtures("https://registration.squadi.com/livescoreSeasonFixture?organisationKey=771945e6-27e1-43bf-b81e-30f80d1a4568&yearId=8&competitionUniqueKey=8e0e372e-1695-47e7-a34b-a50cf09f1a36&divisionId=All&teamId=103777")
     cal_id = 'f5e3d140f8e37220cefc618d30a57c8a1c9654f716175945c3eda5d0c71cb0c8@group.calendar.google.com'
-    if len(fix_out) > 0:
+    if (len(fix_O35) > 0) and (len(fix_O45) > 0):
         service = get_calendar_service()
         delete_events_from_calendar(service, cal_id)
-        for a in fix_out:
+        for a in fix_O35:
             create_event(service,
                          calendarId=cal_id,
                          summary=f"O35: {a['Home']} {a['Result']} {a['Away']}",
                          location=a['Location'],
                          start_dt=a['StartDateTime'],
                          end_dt=a['StartDateTime'] + dt.timedelta(hours=2))
+        for a in fix_O45:
+            create_event(service,
+                         calendarId=cal_id,
+                         summary=f"O45: {a['Home']} {a['Result']} {a['Away']}",
+                         location=a['Location'],
+                         start_dt=a['StartDateTime'],
+                         end_dt=a['StartDateTime'] + dt.timedelta(hours=2))
     else:
-        print('No fixtures found so no changes made to calendar')
+        raise ValueError('No fixtures found so no changes made to calendar')
 
     # Holmes family fixtures
     print('Holmes family fixtures')
     urls = {'Twins': "https://www.gapfootball.org.au/football/miniroos/fixtures/under-6-draw/",
-            'Rob': "https://registration.squadi.com/competitions?yearId=7&matchid=622227&organisationKey=bede218b-68e3-45cb-9ec0-892683988b5b&competitionUniqueKey=6a795117-75e8-448c-8f21-977c2412946a&divisionId=5876&teamId=59512",
+            'Rob': "https://registration.squadi.com/livescoreSeasonFixture?organisationKey=771945e6-27e1-43bf-b81e-30f80d1a4568&yearId=8&competitionUniqueKey=8e0e372e-1695-47e7-a34b-a50cf09f1a36&divisionId=All&teamId=103777",
             'Saoirse': "https://registration.squadi.com/livescoreSeasonFixture?organisationKey=74f39f3a-6e73-48a8-b837-705aba4c4512&yearId=8&competitionUniqueKey=3b8e1b7a-2625-402e-bd40-8da1d816291c&divisionId=All&teamId=92561",
             'Cillian': "https://registration.squadi.com/competitions?yearId=7&fbclid=IwAR376c74X44fcXFJfoZC2hM5kCg5sdUgERQktM5jNOOPr3VKSGvH_4E6cc8&organisationKey=eb9849ba-05f7-4dae-8c3c-52a23f774dad&matchid=622227&competitionUniqueKey=b63aa285-57d7-4ac7-b10c-7c443fc0d80c&divisionId=5666&teamId=67848"
             }

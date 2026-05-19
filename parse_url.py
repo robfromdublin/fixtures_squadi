@@ -8,53 +8,141 @@ from google.auth.transport.requests import Request
 import os
 import json
 
-def get_afl_fixtures(url):
+import requests
+from datetime import datetime
+
+def get_afl_fixtures(team_id: str):
+    """Fetch AFL team fixtures from PlayHQ GraphQL API.
+
+    Args:
+        team_id (str): PlayHQ team ID (e.g. 'a49d026a')
+
+    Returns:
+        list[dict]: Normalised fixture list
     """
-    Extract fixtures from PlayHQ.
 
-    :param url: PlayHQ url for the team, season and comp you're interested in.
-    :return: list of dicts
+    # CRITICAL: Point directly to the AFL tenant subdomain
+    url = "https://api.playhq.com/graphql"
+
+    query = """
+    query teamFixture($teamID: ID!) {
+      discoverTeamFixture(teamID: $teamID) {
+        fixture {
+          games {
+            id
+            date
+            status {
+              value
+              name
+            }
+            home {
+              ... on DiscoverTeam {
+                name
+              }
+              ... on ProvisionalTeam {
+                name
+              }
+            }
+            away {
+              ... on DiscoverTeam {
+                name
+              }
+              ... on ProvisionalTeam {
+                name
+              }
+            }
+            allocation {
+              time
+              court {
+                name
+                venue {
+                  name
+                }
+              }
+            }
+          }
+        }
+      }
+    }
     """
 
-    with sync_playwright() as p:
-        print('Opening PlayHQ page')
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context(
-            locale="en-AU",  # Set the locale to English (Australia)
-            timezone_id="Australia/Brisbane"  # Set the timezone to Brisbane
-        )
-        page = context.new_page()
-        page.goto(url, timeout=10000)
-        print("Waiting for network to be idle...")
-        page.wait_for_load_state('networkidle', timeout=60000)  # Wait up to 60 seconds for network to settle
-        print("Network idle.")
-        print('Page opened, now waiting for fixtures container')
-        page.wait_for_selector("div.sc-1pr338c-1 euIqzh")  # Adjust to actual fixture container
+    payload = {"variables": {"teamID": team_id}, "query": query}
 
-        # grab fixtures table
-        table = page.locator("div.sc-1pr338c-1 euIqzh")
+    # CRITICAL: Added 'tenant' and expanded 'referer' & 'user-agent'
+    headers = {
+        "accept": "application/json",
+        "content-type": "application/json",
+        "tenant": "afl",  # <-- This tells the main API to use the AFL database map
+        "origin": "https://www.playhq.com",
+        "referer": "https://www.playhq.com/",
+        "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    }
+    r = requests.post(url, json=payload, headers=headers, timeout=30)
+    r.raise_for_status()
+    data = r.json()
 
-        fixtures = table.locator("div.sc-1pr338c-0 sc-1pr338c-5 kBhuTP cNVAcP")
-        fix_out = []
-        print(f'Fixtures found, parsing {fixtures.count()} fixtures row by row')
-        for i in range(fixtures.count()):
-            fix = {}
-            fix['Round'] = fixtures.nth(i).locator("div.sc-fPXMVe daFFgw").inner_text()
-            fix['Home'] = fixtures.nth(i).locator("div.sc-9jw1ry-0 huSxAf").nth(0).inner_text()
-            fix['Away'] = fixtures.nth(i).locator("div.sc-9jw1ry-0 huSxAf").nth(1).inner_text()
-            if fix['Home'] != 'Bye' and fix['Away'] != 'Bye':
-                raw_dt = fixtures.nth(i).locator("div.sc-kpDqfm sc-1uurivg-12 gkKuDp iTeyOw").nth(1).inner_text().replace('\n',' ')
-                fix['StartDateTime'] = dt.datetime.strptime(raw_dt, '%I:%M %p, %a, %d %b %y')
-                fix['Location'] = fixtures.nth(i).locator("div.ant-col").nth(2).inner_text()
-                #fix['Result'] = fixtures.nth(i).locator("div.styles_scoreBox__3xSTT").inner_text().replace('-','vs')
-                fix_out.append(fix)
+    # Extract the list of rounds
+    rounds_list = data.get("data", {}).get("discoverTeamFixture", [])
 
-        browser.close()
-        print('Fixtures successfully parsed')
+    fixtures = []
 
-    return fix_out
+    # Iterate through each round in the season
+    for round_data in rounds_list:
+        if not isinstance(round_data, dict):
+            continue
 
-    
+        # Get the fixture dictionary for this specific round
+        fixture_dict = round_data.get("fixture")
+        if not fixture_dict or not isinstance(fixture_dict, dict):
+            continue
+
+        # Get the list of games in this round
+        games = fixture_dict.get("games", [])
+
+        # Parse the games for this round
+        for g in games:
+            try:
+                # Safely grab team names
+                home = g.get("home", {}).get("name") if g.get("home") else None
+                away = g.get("away", {}).get("name") if g.get("away") else None
+
+                # Skip empty entries or BYEs
+                if not home or not away:
+                    continue
+
+                date_str = g.get("date")
+                time_str = g.get("allocation", {}).get("time") if g.get("allocation") else None
+
+                start_datetime = None
+                if date_str and time_str:
+                    start_datetime = datetime.fromisoformat(f"{date_str}T{time_str}")
+
+                venue = (
+                    g.get("allocation", {})
+                    .get("court", {})
+                    .get("venue", {})
+                    .get("name")
+                    if g.get("allocation")
+                    else None
+                )
+
+                fixtures.append(
+                    {
+                        "Home": home,
+                        "Away": away,
+                        "Status": g.get("status", {}).get("value"),
+                        "StartDateTime": start_datetime,
+                        "Location": venue,
+                        "Result": "vs"
+                    }
+                )
+
+            except Exception:
+                # Safely skip any individually broken game payloads
+                continue
+
+    return fixtures
+
 def get_the_gap_fixtures(url, team=None, year=2025):
     """
     Extract fixtures that are only found on The Gap FC website (e.g. U6 competition)
@@ -218,6 +306,8 @@ def create_event(service, calendarId, summary, location, start_dt, end_dt, descr
 
 # Example usage with your scraped fields
 if __name__ == '__main__':
+    fix_out = get_afl_fixtures("a49d026a")
+    print(fix_out)
 
     print('KPR masters fixtures')
     fix_O35 = get_fixtures("https://registration.squadi.com/livescoreSeasonFixture?organisationKey=771945e6-27e1-43bf-b81e-30f80d1a4568&yearId=8&competitionUniqueKey=8e0e372e-1695-47e7-a34b-a50cf09f1a36&divisionId=All&teamId=103776")
@@ -252,7 +342,7 @@ if __name__ == '__main__':
             }
     urls = {'Rob': "https://registration.squadi.com/livescoreSeasonFixture?organisationKey=771945e6-27e1-43bf-b81e-30f80d1a4568&yearId=8&competitionUniqueKey=8e0e372e-1695-47e7-a34b-a50cf09f1a36&divisionId=All&teamId=103777",
             'Saoirse': "https://registration.squadi.com/livescoreSeasonFixture?organisationKey=74f39f3a-6e73-48a8-b837-705aba4c4512&yearId=8&competitionUniqueKey=3b8e1b7a-2625-402e-bd40-8da1d816291c&divisionId=All&teamId=92561",
-            'Cillian': "https://www.playhq.com/afl/org/the-gap-jafc-south-east-queensland-juniors/6b23ff4f/south-east-queensland-juniors-2026/teams/the-gap-dragons-u10-mixed/a49d026a"
+            'Cillian': "a49d026a"
            }  
     cal_id = '986b042e3651ea9db48e021d35660582e4013f3a5b6d0000c8409c56ff5a8908@group.calendar.google.com'
     service = get_calendar_service()

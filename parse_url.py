@@ -8,6 +8,53 @@ from google.auth.transport.requests import Request
 import os
 import json
 
+def get_afl_fixtures(url):
+    """
+    Extract fixtures from PlayHQ.
+
+    :param url: PlayHQ url for the team, season and comp you're interested in.
+    :return: list of dicts
+    """
+
+    with sync_playwright() as p:
+        print('Opening PlayHQ page')
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context(
+            locale="en-AU",  # Set the locale to English (Australia)
+            timezone_id="Australia/Brisbane"  # Set the timezone to Brisbane
+        )
+        page = context.new_page()
+        page.goto(url, timeout=10000)
+        print("Waiting for network to be idle...")
+        page.wait_for_load_state('networkidle', timeout=60000)  # Wait up to 60 seconds for network to settle
+        print("Network idle.")
+        print('Page opened, now waiting for fixtures container')
+        page.wait_for_selector("div.sc-1pr338c-1 euIqzh")  # Adjust to actual fixture container
+
+        # grab fixtures table
+        table = page.locator("div.sc-1pr338c-1 euIqzh")
+
+        fixtures = table.locator("div.sc-1pr338c-0 sc-1pr338c-5 kBhuTP cNVAcP")
+        fix_out = []
+        print(f'Fixtures found, parsing {fixtures.count()} fixtures row by row')
+        for i in range(fixtures.count()):
+            fix = {}
+            fix['Round'] = fixtures.nth(i).locator("div.sc-fPXMVe daFFgw").inner_text()
+            fix['Home'] = fixtures.nth(i).locator("div.sc-9jw1ry-0 huSxAf").nth(0).inner_text()
+            fix['Away'] = fixtures.nth(i).locator("div.sc-9jw1ry-0 huSxAf").nth(1).inner_text()
+            if fix['Home'] != 'Bye' and fix['Away'] != 'Bye':
+                raw_dt = fixtures.nth(i).locator("div.sc-kpDqfm sc-1uurivg-12 gkKuDp iTeyOw").nth(1).inner_text().replace('\n',' ')
+                fix['StartDateTime'] = dt.datetime.strptime(raw_dt, '%I:%M %p, %a, %d %b %y')
+                fix['Location'] = fixtures.nth(i).locator("div.ant-col").nth(2).inner_text()
+                #fix['Result'] = fixtures.nth(i).locator("div.styles_scoreBox__3xSTT").inner_text().replace('-','vs')
+                fix_out.append(fix)
+
+        browser.close()
+        print('Fixtures successfully parsed')
+
+    return fix_out
+
+    
 def get_the_gap_fixtures(url, team=None, year=2025):
     """
     Extract fixtures that are only found on The Gap FC website (e.g. U6 competition)

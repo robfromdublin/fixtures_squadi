@@ -113,7 +113,7 @@ def get_rugby_fixtures(comp_id: str, team_id: str, club_slug: str = "gps-ruc"):
                         break
 
                 fixtures.append({
-                    "GameID": game_id,
+                    "Result": "vs",
                     "Home": home_name,
                     "Away": away_name,
                     "Status": "Fixture",

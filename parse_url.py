@@ -456,12 +456,7 @@ if __name__ == '__main__':
         raise ValueError('No fixtures found so no changes made to calendar')
 
     # Holmes family fixtures
-    print('Holmes family fixtures - need 2 add Aidan and Cillian')
-    urls = {'Twins': "https://www.gapfootball.org.au/football/miniroos/fixtures/under-6-draw/",
-            'Rob': "https://registration.squadi.com/livescoreSeasonFixture?organisationKey=771945e6-27e1-43bf-b81e-30f80d1a4568&yearId=8&competitionUniqueKey=8e0e372e-1695-47e7-a34b-a50cf09f1a36&divisionId=All&teamId=103777",
-            'Saoirse': "https://registration.squadi.com/livescoreSeasonFixture?organisationKey=74f39f3a-6e73-48a8-b837-705aba4c4512&yearId=8&competitionUniqueKey=3b8e1b7a-2625-402e-bd40-8da1d816291c&divisionId=All&teamId=92561",
-            'Cillian': "https://registration.squadi.com/competitions?yearId=7&fbclid=IwAR376c74X44fcXFJfoZC2hM5kCg5sdUgERQktM5jNOOPr3VKSGvH_4E6cc8&organisationKey=eb9849ba-05f7-4dae-8c3c-52a23f774dad&matchid=622227&competitionUniqueKey=b63aa285-57d7-4ac7-b10c-7c443fc0d80c&divisionId=5666&teamId=67848"
-            }
+    print('Holmes family fixtures')
     urls = {'Rob': "https://registration.squadi.com/livescoreSeasonFixture?organisationKey=771945e6-27e1-43bf-b81e-30f80d1a4568&yearId=8&competitionUniqueKey=8e0e372e-1695-47e7-a34b-a50cf09f1a36&divisionId=All&teamId=103777",
             'Saoirse': "https://registration.squadi.com/livescoreSeasonFixture?organisationKey=74f39f3a-6e73-48a8-b837-705aba4c4512&yearId=8&competitionUniqueKey=3b8e1b7a-2625-402e-bd40-8da1d816291c&divisionId=All&teamId=92561",
             'Cillian': "a49d026a",

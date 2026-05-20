@@ -98,8 +98,8 @@ def get_rugby_fixtures(comp_id: str, team_id: str, club_slug: str = "gps-ruc"):
                 home_name = lines[vs_index - 1]
                 away_name = lines[vs_index + 1]
 
-                # Venue is usually the very last line item in the card element block
-                venue_name = lines[-1] if lines[-1] != away_name else "TBA Ground"
+                # Venue is the third item
+                venue_name = lines[2]
 
                 # Pull the link ID hash from the href string attribute (.../match-centre/25c5bbb05ea4db7bc)
                 href = card.get_attribute("href") or ""
@@ -117,7 +117,7 @@ def get_rugby_fixtures(comp_id: str, team_id: str, club_slug: str = "gps-ruc"):
                     "Home": home_name,
                     "Away": away_name,
                     "Status": "Fixture",
-                    "StartDateTime": time_str,
+                    "StartDateTime": dt.datetime.strptime(time_str, '%a, %b %d, %Y, %I:%M %p'),
                     "Location": venue_name
                 })
 
@@ -127,6 +127,7 @@ def get_rugby_fixtures(comp_id: str, team_id: str, club_slug: str = "gps-ruc"):
         browser.close()
 
     return fixtures
+
 def get_afl_fixtures(team_id: str):
     """Fetch AFL team fixtures from PlayHQ GraphQL API.
 

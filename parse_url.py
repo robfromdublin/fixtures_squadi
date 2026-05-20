@@ -55,7 +55,11 @@ def get_rugby_fixtures(comp_id: str, team_id: str, club_slug: str = "gps-ruc"):
     with sync_playwright() as p:
         print(f"Opening headless browser to parse HTML layout...")
         browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
+        context = browser.new_context(
+            locale="en-AU",  # Set the locale to English (Australia)
+            timezone_id="Australia/Brisbane"  # Set the timezone to Brisbane
+        )
+        page = context.new_page()
 
         # Navigate and wait for the network to go quiet
         page.goto(target_url, wait_until="networkidle")
@@ -84,6 +88,7 @@ def get_rugby_fixtures(comp_id: str, team_id: str, club_slug: str = "gps-ruc"):
                 # Example raw text chunk looks like:
                 # "Round 5\nSaturday, 30 May\nU7 GPS White U7\nvs\nU7 Easts Tigers Gold U7\n10:00 AM\nGPS Rugby Union Club - Field 3"
                 lines = [line.strip() for line in text_content.split("\n") if line.strip()]
+                print(lines)
 
                 # Hunt for the 'vs' row index to map the team positions relative to it
                 vs_index = -1
@@ -423,6 +428,9 @@ def create_event(service, calendarId, summary, location, start_dt, end_dt, descr
 
 # Example usage with your scraped fields
 if __name__ == '__main__':
+    #fix_out = fix_out = get_rugby_fixtures(team_id="aLbZvg5xud8gSgB4q", comp_id="FRpFpdFh7FiJaWvMF")
+    #print(fix_out)
+
     print('KPR masters fixtures')
     fix_O35 = get_fixtures("https://registration.squadi.com/livescoreSeasonFixture?organisationKey=771945e6-27e1-43bf-b81e-30f80d1a4568&yearId=8&competitionUniqueKey=8e0e372e-1695-47e7-a34b-a50cf09f1a36&divisionId=All&teamId=103776")
     fix_O45 = get_fixtures("https://registration.squadi.com/livescoreSeasonFixture?organisationKey=771945e6-27e1-43bf-b81e-30f80d1a4568&yearId=8&competitionUniqueKey=8e0e372e-1695-47e7-a34b-a50cf09f1a36&divisionId=All&teamId=103777")
@@ -469,7 +477,7 @@ if __name__ == '__main__':
         elif u == "Cillian":
             fix_out = get_afl_fixtures(urls[u])
         elif u == "Aidan":
-            fix_out = get_rugby_fixtures(team_id=urls[u], comp_id="FRpFpdFh7FiJaWvMF")
+            fix_out = get_rugby_fixtures(team_id="aLbZvg5xud8gSgB4q", comp_id="FRpFpdFh7FiJaWvMF")
         else:
             fix_out = get_fixtures(urls[u])
         if u == "Rob":

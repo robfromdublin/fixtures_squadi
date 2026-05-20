@@ -7,10 +7,126 @@ from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
 import os
 import json
-
 import requests
-from datetime import datetime
+import re
 
+
+def _get_nextjs_build_id(club_slug: str) -> str:
+    """Helper to scrape the current deployment Build ID from the public HTML page
+
+    so the API doesn't throw a 404 error when they update the website.
+    """
+    html_url = f"https://xplorer.rugby/{club_slug}/fixtures-results"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+
+    response = requests.get(html_url, headers=headers, timeout=15)
+    response.raise_for_status()
+
+    # Search for the Next.js buildId in the page source
+    match = re.search(r'"buildId"\s*:\s*"([^"]+)"', response.text)
+    if match:
+        return match.group(1)
+
+    # Fallback default ID from your curl if scraping fails
+    return "xPqU49OMRXdY91yiD34E3"
+
+
+def get_rugby_fixtures(comp_id: str, team_id: str, club_slug: str = "gps-ruc"):
+    """Scrapes the live HTML page directly using Playwright to extract team fixtures.
+
+    Args:
+        comp_id (str): The competition context ID (e.g. 'FRpFpdFh7FiJaWvMF')
+        team_id (str): Your son's team ID (e.g. 'aLbZvg5xud8gSgB4q')
+        club_slug (str): Club slug template path. Defaults to 'gps-ruc'.
+
+    Returns:
+        list[dict]: Normalised list of fixture dictionaries
+    """
+    # The exact public user URL that displays the games card block on screen
+    target_url = (
+        f"https://xplorer.rugby/{club_slug}/fixtures-results"
+        f"?team={team_id}&comp={comp_id}&season=2026&tab=Fixtures"
+    )
+
+    fixtures = []
+
+    with sync_playwright() as p:
+        print(f"Opening headless browser to parse HTML layout...")
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+
+        # Navigate and wait for the network to go quiet
+        page.goto(target_url, wait_until="networkidle")
+
+        # Give the local NextJS hydration scripts a few extra seconds to render the match elements
+        page.wait_for_timeout(3000)
+
+        print("Locating match cards inside HTML DOM...")
+        # Find all match card containers on the page.
+        # Rugby Xplorer wraps individual games in anchors or list items containing team content.
+        match_cards = page.locator("a[href*='/match-centre/']").all()
+
+        if not match_cards:
+            # Fallback if their wrapper class shifts layouts
+            match_cards = page.locator("div[class*='Fixture']").all()
+
+        print(f"Found {len(match_cards)} potential match entries in HTML.")
+
+        for card in match_cards:
+            try:
+                text_content = card.inner_text()
+                if not text_content or "vs" not in text_content.lower():
+                    continue
+
+                # --- Extract the Match Details from Text ---
+                # Example raw text chunk looks like:
+                # "Round 5\nSaturday, 30 May\nU7 GPS White U7\nvs\nU7 Easts Tigers Gold U7\n10:00 AM\nGPS Rugby Union Club - Field 3"
+                lines = [line.strip() for line in text_content.split("\n") if line.strip()]
+
+                # Hunt for the 'vs' row index to map the team positions relative to it
+                vs_index = -1
+                for idx, line in enumerate(lines):
+                    if line.lower() == "vs":
+                        vs_index = idx
+                        break
+
+                if vs_index == -1 or vs_index < 1 or vs_index >= len(lines) - 1:
+                    continue
+
+                home_name = lines[vs_index - 1]
+                away_name = lines[vs_index + 1]
+
+                # Venue is usually the very last line item in the card element block
+                venue_name = lines[-1] if lines[-1] != away_name else "TBA Ground"
+
+                # Pull the link ID hash from the href string attribute (.../match-centre/25c5bbb05ea4db7bc)
+                href = card.get_attribute("href") or ""
+                game_id = href.split("/")[-1] if "/" in href else "unknown-id"
+
+                # --- Attempt Clean Time Selection ---
+                time_str = "00:00"
+                for line in lines:
+                    if "AM" in line or "PM" in line:
+                        time_str = line.strip()
+                        break
+
+                fixtures.append({
+                    "GameID": game_id,
+                    "Home": home_name,
+                    "Away": away_name,
+                    "Status": "Fixture",
+                    "StartDateTime": time_str,
+                    "Location": venue_name
+                })
+
+            except Exception:
+                continue
+
+        browser.close()
+
+    return fixtures
 def get_afl_fixtures(team_id: str):
     """Fetch AFL team fixtures from PlayHQ GraphQL API.
 
@@ -115,7 +231,7 @@ def get_afl_fixtures(team_id: str):
 
                 start_datetime = None
                 if date_str and time_str:
-                    start_datetime = datetime.fromisoformat(f"{date_str}T{time_str}")
+                    start_datetime = dt.datetime.fromisoformat(f"{date_str}T{time_str}")
 
                 venue = (
                     g.get("allocation", {})
@@ -306,9 +422,6 @@ def create_event(service, calendarId, summary, location, start_dt, end_dt, descr
 
 # Example usage with your scraped fields
 if __name__ == '__main__':
-    fix_out = get_afl_fixtures("a49d026a")
-    print(fix_out)
-
     print('KPR masters fixtures')
     fix_O35 = get_fixtures("https://registration.squadi.com/livescoreSeasonFixture?organisationKey=771945e6-27e1-43bf-b81e-30f80d1a4568&yearId=8&competitionUniqueKey=8e0e372e-1695-47e7-a34b-a50cf09f1a36&divisionId=All&teamId=103776")
     fix_O45 = get_fixtures("https://registration.squadi.com/livescoreSeasonFixture?organisationKey=771945e6-27e1-43bf-b81e-30f80d1a4568&yearId=8&competitionUniqueKey=8e0e372e-1695-47e7-a34b-a50cf09f1a36&divisionId=All&teamId=103777")
@@ -342,7 +455,8 @@ if __name__ == '__main__':
             }
     urls = {'Rob': "https://registration.squadi.com/livescoreSeasonFixture?organisationKey=771945e6-27e1-43bf-b81e-30f80d1a4568&yearId=8&competitionUniqueKey=8e0e372e-1695-47e7-a34b-a50cf09f1a36&divisionId=All&teamId=103777",
             'Saoirse': "https://registration.squadi.com/livescoreSeasonFixture?organisationKey=74f39f3a-6e73-48a8-b837-705aba4c4512&yearId=8&competitionUniqueKey=3b8e1b7a-2625-402e-bd40-8da1d816291c&divisionId=All&teamId=92561",
-            'Cillian': "a49d026a"
+            'Cillian': "a49d026a",
+            'Aidan': "aLbZvg5xud8gSgB4q"
            }  
     cal_id = '986b042e3651ea9db48e021d35660582e4013f3a5b6d0000c8409c56ff5a8908@group.calendar.google.com'
     service = get_calendar_service()
@@ -353,6 +467,8 @@ if __name__ == '__main__':
             fix_out = get_the_gap_fixtures(url=urls[u], team='SC Freiburg')
         elif u == "Cillian":
             fix_out = get_afl_fixtures(urls[u])
+        elif u == "Aidan":
+            fix_out = get_rugby_fixtures(team_id=urls[u], comp_id="FRpFpdFh7FiJaWvMF")
         else:
             fix_out = get_fixtures(urls[u])
         if u == "Rob":

@@ -292,9 +292,12 @@ def get_the_gap_fixtures(url, team=None, year=2025):
 
         # if team is provided, filter the table to it
         if team:
+            print(f"Filtering to {team})
             page.locator('select#filter').select_option(team)
             page.wait_for_load_state('networkidle', timeout=60000)
+            print("Filtered")
 
+        print("Iterating through fixtures")
         fixtures = page.locator("table.draw tbody tr")
         fix_out = []
         for i in range(fixtures.count()):
@@ -310,6 +313,7 @@ def get_the_gap_fixtures(url, team=None, year=2025):
             fix['Location'] = cols.nth(5).inner_text()
             fix['Result'] = 'vs'  # result isn't captured on these pages
             fix_out.append(fix)
+            print(u"Fixture {row} appended")
 
         browser.close()
         print('Page closed')

@@ -314,7 +314,6 @@ def get_the_gap_fixtures(url, team=None, year=2025):
                 fix['Location'] = cols.nth(5).inner_text()
                 fix['Result'] = 'vs'  # result isn't captured on these pages
                 fix_out.append(fix)
-                print(fix)
 
         browser.close()
         print('Page closed')

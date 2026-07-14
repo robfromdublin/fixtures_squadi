@@ -305,15 +305,16 @@ def get_the_gap_fixtures(url, team=None, year=2025):
             row = fixtures.nth(i)
             cols = row.locator('td')
             fix['Round'] = row.locator('th.round').inner_text()
-            date = cols.nth(0).inner_text()
-            time = cols.nth(4).inner_text()
-            fix['StartDateTime'] = dt.datetime.strptime(f'{date} {year} {time}', '%d %b %Y %I:%M%p')
             fix['Home'] = cols.nth(2).inner_text()
             fix['Away'] = cols.nth(3).inner_text()
-            fix['Location'] = cols.nth(5).inner_text()
-            fix['Result'] = 'vs'  # result isn't captured on these pages
-            fix_out.append(fix)
-            print(u"Fixture {row} appended")
+            if fix['Home'].lower() != 'bye' and fix['Away'].lower() != 'bye':
+                date = cols.nth(0).inner_text()
+                time = cols.nth(4).inner_text()
+                fix['StartDateTime'] = dt.datetime.strptime(f'{date} {year} {time}', '%d %b %Y %I:%M%p')
+                fix['Location'] = cols.nth(5).inner_text()
+                fix['Result'] = 'vs'  # result isn't captured on these pages
+                fix_out.append(fix)
+                print(u"Fixture {row} appended")
 
         browser.close()
         print('Page closed')

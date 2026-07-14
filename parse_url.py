@@ -292,7 +292,7 @@ def get_the_gap_fixtures(url, team=None, year=2025):
 
         # if team is provided, filter the table to it
         if team:
-            print(f"Filtering to {team})
+            print(f"Filtering to {team}")
             page.locator('select#filter').select_option(team)
             page.wait_for_load_state('networkidle', timeout=60000)
             print("Filtered")

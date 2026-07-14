@@ -474,7 +474,7 @@ if __name__ == '__main__':
     for u in urls.keys():
         print(f"{u}: Extracting fixtures")
         if u == "Orla":
-            fix_out = get_the_gap_fixtures(url=urls[u], team='Angel City FC')
+            fix_out = get_the_gap_fixtures(url=urls[u], team='Angel City FC', year=2026)
         elif u == "Cillian":
             fix_out = get_afl_fixtures(urls[u])
         elif u == "Aidan":
